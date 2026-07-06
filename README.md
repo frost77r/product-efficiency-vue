@@ -48,6 +48,16 @@ npm run build
 
 当前项目是纯前端演示版本，不依赖后端服务。后续如果接入真实接口，可将 `src/utils/statistics.ts` 中的本地计算逻辑替换为接口请求。
 
+## API 接口预留
+
+已根据作业文档预留接口调用层：
+
+- `src/api/http.ts`：统一 `POST JSON` 请求封装，读取 `VITE_API_BASE_URL` 作为后端基础地址。
+- `src/api/types.ts`：接口请求和响应 TypeScript 类型。
+- `src/api/productEfficiency.ts`：产品分类树、统计页、清单页、AI 综合分析、AI 运维排障 5 个接口方法。
+
+完整接口文档见 `docs/api.md`，其中包含请求方法、前端入参结构和后端响应结构。
+
 ## 页面路由
 
 - `#/statistics`：产品效能统计分析
