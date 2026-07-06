@@ -126,7 +126,7 @@ const barOption = computed<EChartsOption>(() => ({
     stack: 'orders',
     data: bars.value.map((item) => item[key]),
     itemStyle: { color: barMeta[key].color },
-    label: { show: key === 'completed', position: 'insideTop', formatter: ({ value }: { value: number }) => (value ? String(value) : '') }
+    label: { show: key === 'completed', position: 'insideTop', formatter: '{c}' }
   }))
 }))
 

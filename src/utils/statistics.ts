@@ -19,11 +19,11 @@ export const metricMeta: Record<MetricKey, { title: string; desc: string }> = {
 }
 
 export const barMeta: Record<BarSeriesKey, { name: string; color: string }> = {
-  handling: { name: '在途', color: '#409EFF' },
+  handling: { name: '在途', color: '#f59e0b' },
   completed: { name: '竣工', color: '#67C23A' },
-  exception: { name: '异常', color: '#E6A23C' },
-  canceled: { name: '撤单', color: '#F56C6C' },
-  deleted: { name: '删单', color: '#909399' }
+  exception: { name: '异常', color: '#ef4444' },
+  canceled: { name: '撤单', color: '#8b5cf6' },
+  deleted: { name: '删单', color: '#64748b' }
 }
 
 export function buildProductOptions(): ProductOption[] {

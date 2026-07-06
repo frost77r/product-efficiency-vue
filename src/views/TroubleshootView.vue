@@ -189,11 +189,13 @@ async function copy(text: string) {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 22px 24px;
-  margin-bottom: 14px;
-  color: #fff;
-  background: #17202c;
-  border-radius: 8px;
+  padding: 18px 20px;
+  margin-bottom: 16px;
+  color: #1f2937;
+  background: #fff;
+  border: 1px solid #eef2f7;
+  border-radius: 14px;
+  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.06);
 }
 
 .assistant-head h2 {
@@ -203,7 +205,7 @@ async function copy(text: string) {
 
 .assistant-head p {
   margin: 8px 0 0;
-  color: #cbd5e1;
+  color: #64748b;
 }
 
 .quick-questions {
@@ -236,9 +238,9 @@ async function copy(text: string) {
   place-items: center;
   width: 26px;
   height: 26px;
-  border-radius: 50%;
+  border-radius: 8px;
   color: #fff;
-  background: #409eff;
+  background: #1677ff;
 }
 
 .step-body {
@@ -286,9 +288,9 @@ pre button {
 
 .step-grid > div {
   padding: 12px;
-  background: #f8fafc;
+  background: #f8fbff;
   border: 1px solid #e2e8f0;
-  border-radius: 6px;
+  border-radius: 10px;
 }
 
 .step-grid p {
