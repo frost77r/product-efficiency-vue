@@ -57,9 +57,13 @@
 </template>
 
 <script setup lang="ts">
+import { productEfficiencyApi } from '@/api'
+import { useRoute } from 'vue-router'
 import { Search } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { ref } from 'vue'
+
+const route = useRoute()
 
 interface Step {
   type: 'data' | 'config' | 'code'
@@ -90,92 +94,38 @@ const loading = ref(false)
 const result = ref<Result | null>(null)
 const activeSteps = ref(['0', '1', '2'])
 
-const templates: Record<string, Result> = {
-  zeroCloudPc: {
-    summary: '初步判断：云电脑产品数据可能未同步到效能表，或产品编码映射不完整。',
-    time: '本地模拟分析',
-    steps: [
-      {
-        type: 'data',
-        title: '检查订单效能表中云电脑近3天是否有数据',
-        sql: "SELECT COUNT(1) AS cnt, MIN(accept_date) AS earliest, MAX(accept_date) AS latest\nFROM dwd_order_prod_inst_efficiency\nWHERE prod_name LIKE '%云电脑%'\n  AND accept_date >= DATE_SUB(NOW(), INTERVAL 3 DAY);",
-        params: '产品名从问题中提取；时间范围取近3天。',
-        expect: 'COUNT > 0，且 earliest/latest 应在近3天内。',
-        abnormal: '如果 COUNT = 0，说明近3天数据未入库，继续检查产品编码和 ETL 同步。',
-        tables: ['dwd_order_prod_inst_efficiency.prod_name', 'dwd_order_prod_inst_efficiency.accept_date'],
-        source: 'ProductStatisticsMapper.xml -> selectProductOrderStats()'
-      },
-      {
-        type: 'config',
-        title: '检查云电脑产品编码是否完整映射',
-        sql: "SELECT id, prod_name, prod_code, prod_level, parent_prod_code\nFROM edo_product_sort\nWHERE prod_name LIKE '%云电脑%'\n  AND status_cd = '1';",
-        params: '从产品分类表读取全部云电脑相关三级产品编码。',
-        expect: '应能查到云电脑、云电脑数据盘、天翼云电脑等产品。',
-        abnormal: '如果分类表缺失，先维护产品分类；如果分类表存在但效能表无数据，检查 ETL。',
-        tables: ['edo_product_sort.prod_name', 'edo_product_sort.prod_code'],
-        source: 'OdsOrderProdInstServiceImpl.java -> loadProductClassTree()'
-      },
-      {
-        type: 'code',
-        title: '核对统计 SQL 是否传入正确产品编码',
-        sql: "SELECT prod_name, COUNT(1) AS totalCnt\nFROM dwd_order_prod_inst_efficiency\nWHERE prod_id IN ('794524928','794524929','794526674')\nGROUP BY prod_name\nORDER BY totalCnt DESC;",
-        params: 'prod_id 数组来自前端产品选择器。',
-        expect: '传参正确时应返回云电脑相关统计数据。',
-        abnormal: '如果 SQL 有数据但页面为 0，检查 Network 中 /productStatistics 的 productClassIds。',
-        tables: ['dwd_order_prod_inst_efficiency.prod_id'],
-        source: 'ProductStatisticsServiceImpl.java -> queryProductOrderStats()'
-      }
-    ]
-  },
-  default: {
-    summary: '初步判断：优先核对入参、时间范围和统计 SQL 的过滤条件是否一致。',
-    time: '本地模拟分析',
-    steps: [
-      {
-        type: 'code',
-        title: '定位报错堆栈或异常发生位置',
-        sql: 'grep -A 30 "BusinessException" /path/to/logs/application.log | tail -50',
-        params: '用报错发生时间前后5分钟过滤日志。',
-        expect: '日志中能看到 Controller / Service / Mapper 的完整调用链。',
-        abnormal: '如果看不到完整堆栈，临时提高日志级别后复现。',
-        source: 'ProductStatisticsServiceImpl.java -> CommonUtil.checkCommonParams()'
-      },
-      {
-        type: 'data',
-        title: '手工验证当前筛选条件下是否有数据',
-        sql: "SELECT COUNT(1) AS totalCnt\nFROM dwd_order_prod_inst_efficiency\nWHERE accept_date >= '开始时间'\n  AND accept_date <= '结束时间';",
-        params: '开始和结束时间来自统计页或清单页查询条件。',
-        expect: 'totalCnt 大于 0 时，页面统计应能展示对应数据。',
-        abnormal: '如果 SQL 有数据但页面无数据，检查前端状态码或产品编码过滤。',
-        tables: ['dwd_order_prod_inst_efficiency'],
-        source: 'ProductStatisticsMapper.xml -> commonWhereClause'
-      },
-      {
-        type: 'config',
-        title: '检查码表与产品树是否正常加载',
-        sql: "SELECT code, code_name FROM map_code WHERE code_type IN ('latn_id','status_cd');\nSELECT prod_code, prod_name FROM edo_product_sort WHERE status_cd = '1';",
-        params: '无特殊入参。',
-        expect: '码表包含本地网和订单状态，产品树包含一级与三级产品。',
-        abnormal: '缺失时需要先修复初始化数据或缓存刷新逻辑。',
-        tables: ['map_code', 'edo_product_sort'],
-        source: 'DictController.java / ProductClassController.java'
-      }
-    ]
-  }
-}
-
 function ask(value: string) {
   question.value = value
   analyze()
 }
 
-function analyze() {
+async function analyze() {
+  if (!question.value.trim()) {
+    ElMessage.warning('请输入问题描述')
+    return
+  }
   loading.value = true
-  window.setTimeout(() => {
-    result.value = question.value.includes('云电脑') ? templates.zeroCloudPc : templates.default
+  try {
+    const payload = {
+      question: question.value,
+      context: {
+        route: route.path,
+        requestParams: route.query,
+        errorMessage: ''
+      }
+    }
+    const res = await productEfficiencyApi.aiTroubleshoot(payload)
+    result.value = {
+      summary: res.summary,
+      time: res.generatedAt,
+      steps: res.steps as Step[]
+    }
     activeSteps.value = result.value.steps.map((_, index) => String(index))
+  } catch (e: any) {
+    ElMessage.error(e.message || '智能分析请求失败')
+  } finally {
     loading.value = false
-  }, 360)
+  }
 }
 
 async function copy(text: string) {

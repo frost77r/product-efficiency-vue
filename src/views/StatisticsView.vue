@@ -1,42 +1,42 @@
 <template>
   <div>
     <div class="filter-panel">
-      <el-form :model="filters" label-width="78px">
-        <el-row :gutter="14" align="middle">
+      <el-form :model="filters" label-width="72px" size="default">
+        <el-row :gutter="16" align="middle">
           <el-col :span="4">
             <el-form-item label="本地网">
-              <el-select v-model="filters.latnId" clearable>
+              <el-select v-model="filters.latnId" clearable size="default">
                 <el-option label="全省" value="888" />
                 <el-option v-for="item in latnOptions" :key="item.code" :label="item.name" :value="item.code" />
               </el-select>
             </el-form-item>
           </el-col>
-          <el-col :span="7">
+          <el-col :span="5">
             <el-form-item label="产品分类">
               <ProductSelector v-model="filters.productCodes" :options="productOptions" />
             </el-form-item>
           </el-col>
           <el-col :span="4">
             <el-form-item label="订单状态">
-              <el-select v-model="filters.orderState" clearable>
+              <el-select v-model="filters.orderState" clearable size="default">
                 <el-option label="全部" value="" />
                 <el-option v-for="item in statusOptions" :key="item.code" :label="item.name" :value="item.code" />
               </el-select>
             </el-form-item>
           </el-col>
-          <el-col :span="4">
+          <el-col :span="3">
             <el-form-item label="统计时间">
-              <el-select v-model="filters.timeType">
+              <el-select v-model="filters.timeType" size="default">
                 <el-option label="当天" value="TODAY" />
                 <el-option label="本周" value="THIS_WEEK" />
                 <el-option label="当月" value="THIS_MONTH" />
               </el-select>
             </el-form-item>
           </el-col>
-          <el-col :span="5">
+          <el-col :span="8">
             <el-form-item label-width="0">
-              <el-button type="primary" :icon="Search">查询</el-button>
-              <el-button type="success" :icon="MagicStick" @click="openReport">AI综合分析</el-button>
+              <el-button type="primary" :icon="Search" size="default" @click="fetchStatistics">查询</el-button>
+              <el-button type="success" :icon="MagicStick" :loading="aiLoading" @click="openReport" size="default">AI综合分析</el-button>
             </el-form-item>
           </el-col>
         </el-row>
@@ -84,13 +84,15 @@
 <script setup lang="ts">
 import ChartPanel from '@/components/ChartPanel.vue'
 import ProductSelector from '@/components/ProductSelector.vue'
-import type { BarSeriesKey, MetricKey, QueryFilters, TrendSeries } from '@/types'
-import { getRangeFromTimeType } from '@/utils/date'
-import { barMeta, buildProductOptions, demoAnchor, getTimeRangeText, latnOptions, makeBarRows, makeCompareCards, makeTrendSeries, statusOptions } from '@/utils/statistics'
-import { buildAnalysisReport } from '@/utils/report'
+import type { BarSeriesKey, MetricKey, QueryFilters } from '@/types'
+import { formatDateTime, getAlignedRanges, getRangeFromTimeType } from '@/utils/date'
+import { barMeta, buildProductOptions, demoAnchor, getTimeRangeText, latnOptions, statusOptions } from '@/utils/statistics'
+import { productEfficiencyApi } from '@/api'
+import type { CompareMetricPayload, ProductOrderBarPayload, TrendPayload } from '@/api/types'
+
 import { CopyDocument, Download, MagicStick, Printer, Search } from '@element-plus/icons-vue'
 import type { EChartsOption } from 'echarts'
-import { computed, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 
@@ -103,34 +105,65 @@ const filters = reactive<QueryFilters>({
   timeType: 'THIS_MONTH'
 })
 
-const cards = computed(() => makeCompareCards(filters))
-const bars = computed(() => makeBarRows(filters))
-const trends = computed(() => makeTrendSeries(filters))
-const rangeText = computed(() => getTimeRangeText(filters.timeType))
+const cards = ref<CompareMetricPayload[]>([])
+const bars = ref<ProductOrderBarPayload[]>([])
+const trends = ref<TrendPayload[]>([])
+const rangeText = ref(getTimeRangeText(filters.timeType))
+
+async function fetchStatistics() {
+  try {
+    const { currentStart, currentEnd, previousStart, previousEnd } = getAlignedRanges(filters.timeType, demoAnchor)
+    const currentRangeObj = { startTime: formatDateTime(currentStart), endTime: formatDateTime(currentEnd) }
+    const previousRangeObj = { startTime: formatDateTime(previousStart), endTime: formatDateTime(previousEnd) }
+    
+    const res = await productEfficiencyApi.productStatistics({
+      latnId: filters.latnId,
+      productCodes: filters.productCodes,
+      orderState: filters.orderState,
+      timeType: filters.timeType
+    })
+    
+    cards.value = res.compareCards
+    bars.value = res.productBars
+    trends.value = res.trends
+    rangeText.value = `${currentRangeObj.startTime} ~ ${currentRangeObj.endTime}`
+  } catch (e: any) {
+    ElMessage.error(e.message || '获取统计数据失败')
+  }
+}
+
+onMounted(() => {
+  fetchStatistics()
+})
 const reportVisible = ref(false)
-const reportHtml = computed(() => buildAnalysisReport(cards.value, bars.value, trends.value))
+const reportHtml = ref('')
 
-const barOption = computed<EChartsOption>(() => ({
-  tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
-  legend: { top: 0 },
-  grid: { left: 42, right: 20, top: 42, bottom: 78 },
-  xAxis: {
-    type: 'category',
-    data: bars.value.map((item) => item.productName),
-    axisLabel: { interval: 0, rotate: 30, width: 92, overflow: 'truncate' }
-  },
-  yAxis: { type: 'value', minInterval: 1 },
-  series: (Object.keys(barMeta) as BarSeriesKey[]).map((key) => ({
-    name: barMeta[key].name,
-    type: 'bar',
-    stack: 'orders',
-    data: bars.value.map((item) => item[key]),
-    itemStyle: { color: barMeta[key].color },
-    label: { show: key === 'completed', position: 'insideTop', formatter: '{c}' }
-  }))
-}))
+const barOption = computed<EChartsOption>(() => {
+  const categoryCount = bars.value.length
+  const baseBarWidth = Math.max(20, Math.min(40, 300 / categoryCount))
 
-function trendOption(trend: TrendSeries): EChartsOption {
+  return {
+    tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+    legend: { top: 0 },
+    grid: { left: 42, right: 20, top: 42, bottom: 30 },
+    xAxis: {
+      type: 'category',
+      data: bars.value.map((item) => item.productName),
+      axisLabel: { show: true, interval: 0, rotate: 0, fontSize: 10 }
+    },
+    yAxis: { type: 'value', minInterval: 1 },
+    series: (Object.keys(barMeta) as BarSeriesKey[]).map((key) => ({
+      name: barMeta[key].name,
+      type: 'bar',
+      stack: 'orders',
+      barWidth: baseBarWidth,
+      data: bars.value.map((item) => item[key]),
+      itemStyle: { color: barMeta[key].color }
+    }))
+  }
+})
+
+function trendOption(trend: TrendPayload): EChartsOption {
   return {
     tooltip: { trigger: 'axis' },
     grid: { left: 40, right: 18, top: 22, bottom: 38 },
@@ -174,8 +207,46 @@ function onTrendClick(key: MetricKey, params: unknown) {
   router.push({ path: '/list', query: { ...listBaseQuery(), statusGroup: key, trendTime: item.name ?? '' } })
 }
 
-function openReport() {
-  reportVisible.value = true
+const aiLoading = ref(false)
+
+async function openReport() {
+  aiLoading.value = true
+  try {
+    const { currentStart, currentEnd, previousStart, previousEnd } = getAlignedRanges(filters.timeType, demoAnchor)
+    const currentRangeObj = { startTime: formatDateTime(currentStart), endTime: formatDateTime(currentEnd) }
+    const previousRangeObj = { startTime: formatDateTime(previousStart), endTime: formatDateTime(previousEnd) }
+    
+    const payload = {
+      query: {
+        latnId: filters.latnId,
+        productCodes: filters.productCodes,
+        orderState: filters.orderState,
+        timeType: filters.timeType
+      },
+      currentRange: currentRangeObj,
+      previousRange: previousRangeObj,
+      compareCards: cards.value.map(c => ({
+        ...c,
+        currentRange: currentRangeObj,
+        previousRange: previousRangeObj
+      })),
+      productBars: bars.value.map(b => ({
+        ...b,
+        total: b.total ?? (b.handling + b.completed + b.exception + b.canceled + b.deleted)
+      })),
+      trends: trends.value.map(t => ({
+        ...t,
+        granularity: (filters.timeType === 'TODAY' ? 'hour' : 'day') as 'hour' | 'day'
+      }))
+    }
+    const res = await productEfficiencyApi.aiAnalysis(payload)
+    reportHtml.value = res.html
+    reportVisible.value = true
+  } catch (e: any) {
+    ElMessage.error(e.message || 'AI 分析失败')
+  } finally {
+    aiLoading.value = false
+  }
 }
 
 async function copyReport() {

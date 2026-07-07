@@ -65,7 +65,7 @@
           </el-col>
           <el-col :span="8">
             <el-form-item label-width="0">
-              <el-button type="primary" :icon="Search">查询</el-button>
+              <el-button type="primary" :icon="Search" @click="() => { page = 1; fetchList(); }">查询</el-button>
               <el-button :icon="Refresh" @click="reset">重置</el-button>
             </el-form-item>
           </el-col>
@@ -76,7 +76,7 @@
     <div class="section-panel">
       <div class="section-title">
         <span>订单明细列表</span>
-        <span class="muted">共 {{ filteredRows.length }} 条，当前显示 {{ pageRows.length }} 条</span>
+        <span class="muted">共 {{ totalRows }} 条，当前显示 {{ pageRows.length }} 条</span>
       </div>
       <el-table :data="pageRows" border stripe height="560" :row-class-name="rowClassName">
         <el-table-column type="index" label="序号" width="70" />
@@ -110,7 +110,9 @@
           v-model:page-size="pageSize"
           :page-sizes="[10, 20, 50, 100]"
           layout="total, sizes, prev, pager, next, jumper"
-          :total="filteredRows.length"
+          :total="totalRows"
+          @size-change="fetchList"
+          @current-change="fetchList"
         />
       </div>
     </div>
@@ -121,10 +123,13 @@
 import ProductSelector from '@/components/ProductSelector.vue'
 import type { ListFilters } from '@/types'
 import { getRangeFromTimeType } from '@/utils/date'
-import { applyListFilters, buildProductOptions, demoAnchor, latnOptions, statusOptions } from '@/utils/statistics'
+import { buildProductOptions, demoAnchor, latnOptions, statusOptions } from '@/utils/statistics'
 import { Refresh, Search } from '@element-plus/icons-vue'
-import { computed, reactive, ref, watch } from 'vue'
+import { reactive, ref, watch, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
+import { productEfficiencyApi } from '@/api'
+import type { ProductOrderRecordPayload } from '@/api/types'
+import { ElMessage } from 'element-plus'
 
 const route = useRoute()
 const productOptions = buildProductOptions()
@@ -144,6 +149,22 @@ const filters = reactive<ListFilters>({
 const page = ref(1)
 const pageSize = ref(10)
 const highlightProduct = ref('')
+const totalRows = ref(0)
+const pageRows = ref<ProductOrderRecordPayload[]>([])
+
+async function fetchList() {
+  try {
+    const res = await productEfficiencyApi.productList({
+      ...filters,
+      pageNum: page.value,
+      pageSize: pageSize.value as 10 | 20 | 50 | 100
+    })
+    pageRows.value = res.records
+    totalRows.value = res.total
+  } catch (e: any) {
+    ElMessage.error(e.message || '查询失败')
+  }
+}
 
 function hydrateFromQuery() {
   const query = route.query
@@ -159,6 +180,7 @@ function hydrateFromQuery() {
   filters.trendTime = String(query.trendTime || '')
   highlightProduct.value = filters.productName
   page.value = 1
+  fetchList()
 }
 
 function reset() {
@@ -172,22 +194,16 @@ function reset() {
   filters.endTime = range.endTime
   filters.trendTime = ''
   page.value = 1
+  fetchList()
 }
 
-const filteredRows = computed(() => applyListFilters(filters))
-const pageRows = computed(() => {
-  const start = (page.value - 1) * pageSize.value
-  return filteredRows.value.slice(start, start + pageSize.value)
-})
+
 
 function rowClassName({ row }: { row: { prodName: string } }) {
   return highlightProduct.value && row.prodName === highlightProduct.value ? 'highlight-row' : ''
 }
 
 watch(() => route.query, hydrateFromQuery, { immediate: true })
-watch([filteredRows, pageSize], () => {
-  page.value = 1
-})
 </script>
 
 <style scoped>

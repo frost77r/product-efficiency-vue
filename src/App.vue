@@ -1,6 +1,6 @@
 <template>
-  <el-container class="app-shell" direction="vertical">
-    <el-header class="top-shell">
+  <el-container class="app-shell">
+    <el-aside class="sidebar">
       <div class="brand">
         <div class="brand-mark">效</div>
         <div>
@@ -8,7 +8,7 @@
           <span>订单全生命周期监控</span>
         </div>
       </div>
-      <el-menu :default-active="route.path" router mode="horizontal" class="nav-menu">
+      <el-menu :default-active="route.path" router class="nav-menu">
         <el-menu-item index="/statistics">
           <el-icon><DataAnalysis /></el-icon>
           <span>统计分析</span>
@@ -22,15 +22,11 @@
           <span>运维助手</span>
         </el-menu-item>
       </el-menu>
-      <el-tag class="tech-tag" effect="plain">Vue3 + TypeScript + ECharts</el-tag>
-    </el-header>
-    <el-main class="main-view">
-      <div class="page-heading">
-        <div>
-          <h1>{{ pageTitle }}</h1>
-          <p>基于作业样例数据，本地完成统计、钻取、趋势和报告演示。</p>
-        </div>
+      <div class="tech-info">
+        <el-tag effect="plain">Vue3 + TypeScript + ECharts</el-tag>
       </div>
+    </el-aside>
+    <el-main class="main-view">
       <router-view />
     </el-main>
   </el-container>
