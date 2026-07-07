@@ -8,7 +8,7 @@
           class="product-group"
           :class="{ active: group.code === activeCode }"
           type="button"
-          @click="activeCode = group.code"
+          @click="activeCode = group.code; searchText = ''"
         >
           <span>{{ group.name }}</span>
           <small>{{ group.children.length }}</small>
@@ -19,8 +19,14 @@
           <el-button size="small" @click="checkActive(true)">全选</el-button>
           <el-button size="small" @click="checkActive(false)">清空</el-button>
         </div>
+        <el-input v-model="searchText" size="small" placeholder="搜索产品名称" clearable class="product-search">
+          <template #prefix>
+            <el-icon><Search /></el-icon>
+          </template>
+        </el-input>
+        <div v-if="searchText" class="product-count-muted">筛选出 {{ filteredProducts.length }} 个 / 共 {{ activeProducts.length }} 个</div>
         <el-checkbox-group v-model="innerValue">
-          <el-checkbox v-for="item in activeProducts" :key="item.code" :label="item.code">
+          <el-checkbox v-for="item in filteredProducts" :key="item.code" :label="item.code">
             {{ item.name }}
           </el-checkbox>
         </el-checkbox-group>
@@ -50,9 +56,18 @@ const emit = defineEmits<{
 }>()
 
 const activeCode = ref(props.options[0]?.code ?? '')
-const innerValue = ref<string[]>([...props.modelValue])
+const innerValue = computed({
+  get: () => props.modelValue,
+  set: (value: string[]) => emit('update:modelValue', value)
+})
+const searchText = ref('')
 
 const activeProducts = computed(() => props.options.find((item) => item.code === activeCode.value)?.children ?? [])
+const filteredProducts = computed(() => {
+  const q = searchText.value.trim().toLowerCase()
+  if (!q) return activeProducts.value
+  return activeProducts.value.filter((item) => item.name.toLowerCase().includes(q))
+})
 const productNameByCode = computed(() => new Map(props.options.flatMap((group) => group.children.map((child) => [child.code, child.name] as const))))
 const displayText = computed(() => {
   const selected = innerValue.value.map((code) => productNameByCode.value.get(code)).filter(Boolean)
@@ -62,8 +77,10 @@ const displayText = computed(() => {
 })
 
 function checkActive(checked: boolean) {
-  const activeCodes = activeProducts.value.map((item) => item.code)
-  innerValue.value = checked ? Array.from(new Set([...innerValue.value, ...activeCodes])) : innerValue.value.filter((code) => !activeCodes.includes(code))
+  const codes = filteredProducts.value.map((item) => item.code)
+  innerValue.value = checked
+    ? Array.from(new Set([...innerValue.value, ...codes]))
+    : innerValue.value.filter((code) => !codes.includes(code))
 }
 
 watch(
@@ -126,6 +143,16 @@ watch(innerValue, (value) => emit('update:modelValue', value))
   display: flex;
   gap: 8px;
   margin-bottom: 8px;
+}
+
+.product-search {
+  margin-bottom: 6px;
+}
+
+.product-count-muted {
+  color: #8492a6;
+  font-size: 12px;
+  margin-bottom: 6px;
 }
 
 .product-list :deep(.el-checkbox) {
