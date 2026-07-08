@@ -232,8 +232,8 @@ watch(() => route.query, hydrateFromQuery, { immediate: true })
 .list-container {
   display: flex;
   flex-direction: column;
-  height: 100%;
-  min-height: 100vh;
+  height: calc(100vh - 58px);
+  min-height: calc(100vh - 58px);
   overflow: hidden;
   position: relative;
 }
