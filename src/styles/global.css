@@ -31,6 +31,11 @@ body {
   flex-direction: column;
   box-shadow: 4px 0 24px rgba(22, 119, 255, 0.22);
   z-index: 20;
+  transition: width 0.3s ease, box-shadow 0.3s ease;
+}
+
+.sidebar-collapsed {
+  width: 56px;
 }
 
 .brand {
@@ -39,6 +44,12 @@ body {
   gap: 8px;
   padding: 16px 12px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+  transition: padding 0.3s ease;
+}
+
+.sidebar-collapsed .brand {
+  padding: 16px;
+  justify-content: center;
 }
 
 .brand-mark {
@@ -52,6 +63,18 @@ body {
   font-weight: 800;
   font-size: 12px;
   flex-shrink: 0;
+}
+
+.brand-text {
+  overflow: hidden;
+  white-space: nowrap;
+  transition: width 0.3s ease, opacity 0.3s ease;
+}
+
+.sidebar-collapsed .brand-text {
+  width: 0;
+  opacity: 0;
+  overflow: hidden;
 }
 
 .brand strong,
@@ -86,10 +109,18 @@ body {
   border: 0;
   border-radius: 6px;
   line-height: 44px;
-  transition: all 0.18s;
+  transition: all 0.3s ease;
   display: flex;
   align-items: center;
   gap: 8px;
+  justify-content: flex-start;
+}
+
+.sidebar-collapsed .nav-menu .el-menu-item {
+  justify-content: center;
+  align-items: center;
+  padding: 0;
+  margin: 3px 2px;
 }
 
 .nav-menu .el-menu-item:hover {
@@ -105,25 +136,54 @@ body {
 .nav-menu .el-menu-item .el-icon {
   font-size: 14px;
   margin-right: 0;
+  flex-shrink: 0;
+}
+
+.sidebar-collapsed .nav-menu .el-menu-item .el-icon {
+  font-size: 14px;
 }
 
 .nav-menu .el-menu-item span {
   font-size: 13px;
   font-weight: 500;
+  transition: width 0.3s ease, opacity 0.3s ease;
+  white-space: nowrap;
 }
 
-.tech-info {
+.sidebar-collapsed .nav-menu .el-menu-item span {
+  width: 0;
+  opacity: 0;
+  overflow: hidden;
+}
+
+.collapse-btn {
   padding: 12px;
   border-top: 1px solid rgba(255, 255, 255, 0.15);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: padding 0.3s ease;
 }
 
-.tech-info .el-tag {
-  width: 100%;
+.sidebar-collapsed .collapse-btn {
+  padding: 12px;
+}
+
+.collapse-toggle {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 18px;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
   justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.collapse-toggle:hover {
   background: rgba(255, 255, 255, 0.15);
-  border: 0;
-  color: rgba(255, 255, 255, 0.9);
-  font-size: 10px;
+  color: #fff;
 }
 
 .main-view {
@@ -132,6 +192,11 @@ body {
   padding: 16px 20px;
   background: #f5f7fb;
   min-height: 100vh;
+  transition: margin-left 0.3s ease;
+}
+
+.main-view-collapsed {
+  margin-left: 56px;
 }
 
 .page-heading {

@@ -11,7 +11,7 @@
               </el-select>
             </el-form-item>
           </el-col>
-          <el-col :span="5">
+          <el-col :span="6">
             <el-form-item label="产品分类">
               <ProductSelector v-model="filters.productCodes" :options="productOptions" />
             </el-form-item>
@@ -24,7 +24,7 @@
               </el-select>
             </el-form-item>
           </el-col>
-          <el-col :span="3">
+          <el-col :span="4">
             <el-form-item label="统计时间">
               <el-select v-model="filters.timeType" size="default">
                 <el-option label="当天" value="TODAY" />
@@ -33,7 +33,7 @@
               </el-select>
             </el-form-item>
           </el-col>
-          <el-col :span="8">
+          <el-col :span="6">
             <el-form-item label-width="0">
               <el-button type="primary" :icon="Search" size="default" @click="fetchStatistics">查询</el-button>
               <el-button type="success" :icon="MagicStick" :loading="aiLoading" @click="openReport" size="default">AI综合分析</el-button>

@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="list-container">
     <div class="filter-panel">
       <el-breadcrumb separator="/" style="margin-bottom: 14px">
         <el-breadcrumb-item :to="{ path: '/statistics' }">产品效能分析</el-breadcrumb-item>
@@ -78,7 +78,8 @@
         <span>订单明细列表</span>
         <span class="muted">共 {{ totalRows }} 条，当前显示 {{ pageRows.length }} 条</span>
       </div>
-      <el-table :data="pageRows" border stripe height="560" :row-class-name="rowClassName">
+      <div class="table-wrapper">
+        <el-table :data="pageRows" border stripe :height="tableHeight" :row-class-name="rowClassName">
         <el-table-column type="index" label="序号" width="70" />
         <el-table-column prop="custOrderId" label="订单号" min-width="150" />
         <el-table-column prop="acceptDate" label="订购时间" min-width="160" />
@@ -103,7 +104,8 @@
         <el-table-column prop="finishTime" label="完成时间" min-width="160">
           <template #default="{ row }">{{ row.finishTime || '--' }}</template>
         </el-table-column>
-      </el-table>
+        </el-table>
+      </div>
       <div class="pager">
         <el-pagination
           v-model:current-page="page"
@@ -151,6 +153,7 @@ const pageSize = ref(10)
 const highlightProduct = ref('')
 const totalRows = ref(0)
 const pageRows = ref<ProductOrderRecordPayload[]>([])
+const tableHeight = ref(400)
 
 async function fetchList() {
   try {
@@ -203,14 +206,73 @@ function rowClassName({ row }: { row: { prodName: string } }) {
   return highlightProduct.value && row.prodName === highlightProduct.value ? 'highlight-row' : ''
 }
 
+function calculateTableHeight() {
+  const container = document.querySelector('.list-container')
+  const filterPanel = document.querySelector('.filter-panel')
+  const sectionPanel = document.querySelector('.section-panel')
+  const sectionTitle = document.querySelector('.section-title')
+  const pager = document.querySelector('.pager')
+  
+  if (container && filterPanel && sectionPanel && sectionTitle && pager) {
+    const containerHeight = container.clientHeight
+    const filterHeight = filterPanel.offsetHeight
+    const titleHeight = sectionTitle.offsetHeight
+    const pagerHeight = pager.offsetHeight
+    const padding = 32 // section-panel padding
+    
+    tableHeight.value = containerHeight - filterHeight - titleHeight - pagerHeight - padding - 20
+  }
+}
+
+onMounted(() => {
+  calculateTableHeight()
+  window.addEventListener('resize', calculateTableHeight)
+})
+
 watch(() => route.query, hydrateFromQuery, { immediate: true })
 </script>
 
 <style scoped>
+.list-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 100vh;
+  overflow: hidden;
+  position: relative;
+}
+
+.list-container ::v-deep(.main-view) {
+  overflow: hidden !important;
+}
+
+.filter-panel {
+  flex-shrink: 0;
+}
+
+.section-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.section-title {
+  flex-shrink: 0;
+}
+
+.table-wrapper {
+  flex: 1;
+  overflow: hidden;
+  min-height: 0;
+}
+
 .pager {
   display: flex;
   justify-content: flex-end;
   padding-top: 14px;
+  flex-shrink: 0;
 }
 
 :deep(.highlight-row td) {

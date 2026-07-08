@@ -171,3 +171,33 @@ export interface AiTroubleshootPayload {
   steps: TroubleshootStepPayload[]
   generatedAt: string
 }
+
+export interface AnalysisReportHistoryItem {
+  id: number
+  report_no: string
+  title: string
+  time_type: string
+  current_start_time: string
+  current_end_time: string
+  status: string
+  created_at: string
+}
+
+export interface TroubleshootSessionHistoryItem {
+  id: number
+  session_no: string
+  question: string
+  summary: string
+  status: string
+  created_at: string
+}
+
+export interface PromptsPayload {
+  analysis_prompt: string
+  troubleshoot_prompt: string
+}
+
+export interface PromptsRequest {
+  analysis_prompt: string
+  troubleshoot_prompt: string
+}

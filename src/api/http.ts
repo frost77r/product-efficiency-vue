@@ -22,3 +22,20 @@ export async function postJson<TResponse, TRequest extends object = Record<strin
 
   return result.data
 }
+
+export async function fetchGet<TResponse>(url: string): Promise<TResponse> {
+  const response = await fetch(`${API_BASE_URL}${url}`, {
+    method: 'GET'
+  })
+
+  if (!response.ok) {
+    throw new Error(`API request failed: ${response.status} ${response.statusText}`)
+  }
+
+  const result = (await response.json()) as ApiResponse<TResponse>
+  if (result.code !== 0) {
+    throw new Error(result.message || 'API business error')
+  }
+
+  return result.data
+}

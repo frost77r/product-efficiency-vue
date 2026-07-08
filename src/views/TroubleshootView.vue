@@ -5,7 +5,6 @@
         <h2>运维智能助手</h2>
         <p>输入报错或异常现象，生成“先查数据 → 再查配置 → 再查代码”的核查指引。</p>
       </div>
-      <el-tag effect="plain">选做模块</el-tag>
     </div>
 
     <div class="filter-panel">
@@ -14,8 +13,8 @@
         <el-button v-for="item in questions" :key="item" link type="primary" @click="ask(item)">{{ item }}</el-button>
       </div>
       <div class="question-row">
-        <el-input v-model="question" type="textarea" :rows="4" placeholder="请描述问题：报错信息 / 异常现象 / 数据疑问，越具体越好" />
-        <el-button type="primary" size="large" :icon="Search" :loading="loading" @click="analyze">智能分析</el-button>
+        <el-input v-model="question" type="textarea" :rows="3" placeholder="请描述问题：报错信息 / 异常现象 / 数据疑问，越具体越好" />
+        <el-button type="primary" size="default" :icon="Search" :loading="loading" @click="analyze">智能分析</el-button>
       </div>
     </div>
 
@@ -168,8 +167,8 @@ async function copy(text: string) {
 
 .question-row {
   display: grid;
-  grid-template-columns: 1fr 130px;
-  gap: 12px;
+  grid-template-columns: 1fr 100px;
+  gap: 10px;
   align-items: stretch;
 }
 
@@ -184,13 +183,17 @@ async function copy(text: string) {
 }
 
 .step-num {
-  display: grid;
-  place-items: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 26px;
   height: 26px;
   border-radius: 8px;
   color: #fff;
   background: #1677ff;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1;
 }
 
 .step-body {
