@@ -17,6 +17,7 @@ const props = defineProps<{
   title: string
   option: EChartsOption
   tag?: string
+  areaClick?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -30,7 +31,20 @@ function render() {
   if (!chartRef.value) return
   if (!chart) {
     chart = echarts.init(chartRef.value)
-    chart.on('click', (params) => emit('chartClick', params))
+    if (props.areaClick) {
+      chart.getZr().on('click', (params: any) => {
+        if (!chart) return
+        const point = [params.offsetX, params.offsetY]
+        if (chart.containPixel('grid', point)) {
+          const xIndex = chart.convertFromPixel({ seriesIndex: 0 }, point)[0] as number
+          const opt = chart.getOption() as any
+          const name = opt.xAxis?.[0]?.data?.[xIndex]
+          if (name) emit('chartClick', { name })
+        }
+      })
+    } else {
+      chart.on('click', (params) => emit('chartClick', params))
+    }
   }
   chart.setOption(props.option, true)
 }

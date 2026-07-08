@@ -58,12 +58,7 @@
               <el-date-picker v-model="filters.endTime" type="datetime" value-format="YYYY-MM-DD HH:mm:ss" />
             </el-form-item>
           </el-col>
-          <el-col :span="4">
-            <el-form-item label="趋势点">
-              <el-input v-model="filters.trendTime" clearable placeholder="如 08:00 / 08-12" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="8">
+          <el-col :span="12">
             <el-form-item label-width="0">
               <el-button type="primary" :icon="Search" @click="() => { page = 1; fetchList(); }">查询</el-button>
               <el-button :icon="Refresh" @click="reset">重置</el-button>
@@ -135,7 +130,8 @@ import { ElMessage } from 'element-plus'
 
 const route = useRoute()
 const productOptions = buildProductOptions()
-const range = getRangeFromTimeType('THIS_MONTH', demoAnchor)
+const range = getRangeFromTimeType('THIS_MONTH', new Date())
+
 const filters = reactive<ListFilters>({
   latnId: '888',
   productCodes: [],
@@ -177,7 +173,8 @@ function hydrateFromQuery() {
     .filter(Boolean)
   filters.productName = String(query.productName || '')
   filters.orderState = String(query.orderState || '')
-  filters.statusGroup = (String(query.statusGroup || '') as ListFilters['statusGroup']) || ''
+  const sg = String(query.statusGroup || '')
+  filters.statusGroup = (sg === 'total' ? '' : sg) as ListFilters['statusGroup']
   filters.startTime = String(query.startTime || range.startTime)
   filters.endTime = String(query.endTime || range.endTime)
   filters.trendTime = String(query.trendTime || '')
@@ -219,7 +216,7 @@ function calculateTableHeight() {
     const pagerHeight = pager.offsetHeight
     const padding = 32 // section-panel padding
     
-    tableHeight.value = containerHeight - filterHeight - titleHeight - pagerHeight - padding - 20
+    tableHeight.value = containerHeight - filterHeight - titleHeight - pagerHeight - padding - 80
   }
 }
 

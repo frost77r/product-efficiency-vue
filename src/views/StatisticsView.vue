@@ -64,6 +64,7 @@
         :title="trend.title"
         :option="trendOption(trend)"
         tag="点击数据点钻取"
+        :areaClick="true"
         @chart-click="(params) => onTrendClick(trend.key, params)"
       />
     </div>
@@ -84,8 +85,8 @@
 import ChartPanel from '@/components/ChartPanel.vue'
 import ProductSelector from '@/components/ProductSelector.vue'
 import type { BarSeriesKey, MetricKey, QueryFilters } from '@/types'
-import { formatDateTime, getAlignedRanges, getRangeFromTimeType } from '@/utils/date'
-import { barMeta, buildProductOptions, demoAnchor, getTimeRangeText, latnOptions, statusOptions } from '@/utils/statistics'
+import { formatDateTime, getAlignedRanges, getRangeFromTimeType, getRangeFromTrendLabel } from '@/utils/date'
+import { barMeta, buildProductOptions, getTimeRangeText, latnOptions, statusOptions } from '@/utils/statistics'
 import { productEfficiencyApi } from '@/api'
 import type { CompareMetricPayload, ProductOrderBarPayload, TrendPayload } from '@/api/types'
 
@@ -111,7 +112,7 @@ const rangeText = ref(getTimeRangeText(filters.timeType))
 
 async function fetchStatistics() {
   try {
-    const { currentStart, currentEnd, previousStart, previousEnd } = getAlignedRanges(filters.timeType, demoAnchor)
+    const { currentStart, currentEnd, previousStart, previousEnd } = getAlignedRanges(filters.timeType, new Date())
     const currentRangeObj = { startTime: formatDateTime(currentStart), endTime: formatDateTime(currentEnd) }
     const previousRangeObj = { startTime: formatDateTime(previousStart), endTime: formatDateTime(previousEnd) }
     
@@ -220,7 +221,7 @@ function trendOption(trend: TrendPayload): EChartsOption {
 const PRIORITY_PRODUCTS = ['天翼宽带有线', '手机', 'iTV', '全屋WIFI', '智能家居', '天翼云盘（个人版）', '智能应答', '翼支付']
 
 function listBaseQuery() {
-  const range = getRangeFromTimeType(filters.timeType, demoAnchor)
+  const range = getRangeFromTimeType(filters.timeType, new Date())
   return {
     latnId: filters.latnId,
     productCodes: filters.productCodes.join(','),
@@ -243,7 +244,9 @@ function onBarClick(params: unknown) {
 
 function onTrendClick(key: MetricKey, params: unknown) {
   const item = params as { name?: string }
-  router.push({ path: '/list', query: { ...listBaseQuery(), statusGroup: key, trendTime: item.name ?? '' } })
+  if (!item.name) return
+  const exact = getRangeFromTrendLabel(item.name, filters.timeType, new Date())
+  router.push({ path: '/list', query: { ...listBaseQuery(), statusGroup: key, startTime: exact.startTime, endTime: exact.endTime } })
 }
 
 const aiLoading = ref(false)
@@ -251,7 +254,7 @@ const aiLoading = ref(false)
 async function openReport() {
   aiLoading.value = true
   try {
-    const { currentStart, currentEnd, previousStart, previousEnd } = getAlignedRanges(filters.timeType, demoAnchor)
+    const { currentStart, currentEnd, previousStart, previousEnd } = getAlignedRanges(filters.timeType, new Date())
     const currentRangeObj = { startTime: formatDateTime(currentStart), endTime: formatDateTime(currentEnd) }
     const previousRangeObj = { startTime: formatDateTime(previousStart), endTime: formatDateTime(previousEnd) }
     

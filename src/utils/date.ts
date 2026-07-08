@@ -87,3 +87,30 @@ export function trendBucket(input: string, timeType: TimeType) {
   if (timeType === 'TODAY') return `${pad(date.getHours())}:00`
   return formatDate(date).slice(5)
 }
+
+export function getRangeFromTrendLabel(label: string, timeType: TimeType, anchor: Date) {
+  const { currentStart, currentEnd } = getAlignedRanges(timeType, anchor)
+  if (timeType === 'TODAY') {
+    const hour = parseInt(label.split(':')[0], 10)
+    const st = new Date(currentStart)
+    st.setHours(hour, 0, 0, 0)
+    const ed = new Date(currentStart)
+    ed.setHours(hour, 59, 59, 999)
+    return { startTime: formatDateTime(st), endTime: formatDateTime(ed) }
+  } else {
+    // label is 'MM-DD'
+    const [mStr, dStr] = label.split('-')
+    const month = parseInt(mStr, 10) - 1
+    const day = parseInt(dStr, 10)
+    
+    let year = currentStart.getFullYear()
+    // if week crosses year and month is December but currentStart year is January (wait, currentStart is always the earlier one)
+    // Actually currentEnd year is usually enough. If start is Dec and end is Jan:
+    if (month === 11 && currentEnd.getMonth() === 0) year = currentStart.getFullYear()
+    else if (month === 0 && currentStart.getMonth() === 11) year = currentEnd.getFullYear()
+
+    const st = new Date(year, month, day, 0, 0, 0, 0)
+    const ed = new Date(year, month, day, 23, 59, 59, 999)
+    return { startTime: formatDateTime(st), endTime: formatDateTime(ed) }
+  }
+}
