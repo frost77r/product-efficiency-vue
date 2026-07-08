@@ -41,7 +41,6 @@
           </el-col>
         </el-row>
       </el-form>
-      <div class="muted">演示数据时间锚点：{{ rangeText }}。当天/本周/当月均按样例数据中的最新受理时间对齐。</div>
     </div>
 
     <div class="metric-grid">
@@ -138,8 +137,44 @@ onMounted(() => {
 const reportVisible = ref(false)
 const reportHtml = ref('')
 
+const displayBars = computed(() => {
+  const MAX_BARS = 12
+
+  const source = filters.productCodes.length === 0
+    ? bars.value.filter(b => PRIORITY_PRODUCTS.includes(b.productName))
+    : bars.value
+
+  if (source.length <= MAX_BARS) return source
+
+  const topBars = source.slice(0, MAX_BARS - 1)
+  const restBars = source.slice(MAX_BARS - 1)
+
+  const otherBar: ProductOrderBarPayload = {
+    productName: '...',
+    productCode: '',
+    handling: 0,
+    completed: 0,
+    exception: 0,
+    canceled: 0,
+    deleted: 0,
+    total: 0
+  }
+
+  for (const bar of restBars) {
+    otherBar.handling += bar.handling || 0
+    otherBar.completed += bar.completed || 0
+    otherBar.exception += bar.exception || 0
+    otherBar.canceled += bar.canceled || 0
+    otherBar.deleted += bar.deleted || 0
+    otherBar.total += bar.total || 0
+  }
+
+  return [...topBars, otherBar]
+})
+
 const barOption = computed<EChartsOption>(() => {
-  const categoryCount = bars.value.length
+  const dataList = displayBars.value
+  const categoryCount = dataList.length
   const baseBarWidth = Math.max(20, Math.min(40, 300 / categoryCount))
 
   return {
@@ -148,7 +183,7 @@ const barOption = computed<EChartsOption>(() => {
     grid: { left: 42, right: 20, top: 42, bottom: 30 },
     xAxis: {
       type: 'category',
-      data: bars.value.map((item) => item.productName),
+      data: dataList.map((item) => item.productName),
       axisLabel: { show: true, interval: 0, rotate: 0, fontSize: 10 }
     },
     yAxis: { type: 'value', minInterval: 1 },
@@ -157,7 +192,7 @@ const barOption = computed<EChartsOption>(() => {
       type: 'bar',
       stack: 'orders',
       barWidth: baseBarWidth,
-      data: bars.value.map((item) => item[key]),
+      data: dataList.map((item) => item[key]),
       itemStyle: { color: barMeta[key].color }
     }))
   }
@@ -182,11 +217,14 @@ function trendOption(trend: TrendPayload): EChartsOption {
   }
 }
 
+const PRIORITY_PRODUCTS = ['天翼宽带有线', '手机', 'iTV', '全屋WIFI', '智能家居', '天翼云盘（个人版）', '智能应答', '翼支付']
+
 function listBaseQuery() {
   const range = getRangeFromTimeType(filters.timeType, demoAnchor)
   return {
     latnId: filters.latnId,
     productCodes: filters.productCodes.join(','),
+    orderState: filters.orderState,
     startTime: range.startTime,
     endTime: range.endTime
   }
@@ -198,6 +236,7 @@ function goListByMetric(key: MetricKey) {
 
 function onBarClick(params: unknown) {
   const item = params as { name?: string; seriesName?: string }
+  if (item.name === '...') return
   const seriesKey = (Object.keys(barMeta) as BarSeriesKey[]).find((key) => barMeta[key].name === item.seriesName) ?? ''
   router.push({ path: '/list', query: { ...listBaseQuery(), productName: item.name ?? '', statusGroup: seriesKey } })
 }

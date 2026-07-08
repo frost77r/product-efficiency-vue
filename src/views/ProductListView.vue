@@ -207,13 +207,12 @@ function rowClassName({ row }: { row: { prodName: string } }) {
 }
 
 function calculateTableHeight() {
-  const container = document.querySelector('.list-container')
-  const filterPanel = document.querySelector('.filter-panel')
-  const sectionPanel = document.querySelector('.section-panel')
-  const sectionTitle = document.querySelector('.section-title')
-  const pager = document.querySelector('.pager')
+  const container = document.querySelector<HTMLElement>('.list-container')
+  const filterPanel = document.querySelector<HTMLElement>('.filter-panel')
+  const sectionTitle = document.querySelector<HTMLElement>('.section-title')
+  const pager = document.querySelector<HTMLElement>('.pager')
   
-  if (container && filterPanel && sectionPanel && sectionTitle && pager) {
+  if (container && filterPanel && sectionTitle && pager) {
     const containerHeight = container.clientHeight
     const filterHeight = filterPanel.offsetHeight
     const titleHeight = sectionTitle.offsetHeight

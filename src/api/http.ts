@@ -1,9 +1,11 @@
 import type { ApiResponse } from './types'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? ''
+const AI_API_BASE_URL = import.meta.env.VITE_AI_API_BASE_URL ?? API_BASE_URL
 
 export async function postJson<TResponse, TRequest extends object = Record<string, never>>(url: string, body: TRequest): Promise<TResponse> {
-  const response = await fetch(`${API_BASE_URL}${url}`, {
+  const baseUrl = url.startsWith('/ai') ? AI_API_BASE_URL : API_BASE_URL
+  const response = await fetch(`${baseUrl}${url}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
@@ -24,7 +26,8 @@ export async function postJson<TResponse, TRequest extends object = Record<strin
 }
 
 export async function fetchGet<TResponse>(url: string): Promise<TResponse> {
-  const response = await fetch(`${API_BASE_URL}${url}`, {
+  const baseUrl = url.startsWith('/ai') ? AI_API_BASE_URL : API_BASE_URL
+  const response = await fetch(`${baseUrl}${url}`, {
     method: 'GET'
   })
 
