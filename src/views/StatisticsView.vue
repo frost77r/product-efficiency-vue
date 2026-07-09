@@ -54,13 +54,11 @@
       </div>
     </div>
 
-    <ChartPanel title="产品订单统计" :option="barOption" tag="点击柱子钻取清单" @chart-click="onBarClick" />
-
-    <div class="trend-grid">
+    <div class="charts-layout">
+      <ChartPanel title="产品订单统计" :option="barOption" tag="点击柱子钻取清单" @chart-click="onBarClick" />
       <ChartPanel
-        v-for="(trend, index) in trends"
+        v-for="trend in trends"
         :key="trend.key"
-        :class="{ center: index === trends.length - 1 }"
         :title="trend.title"
         :option="trendOption(trend)"
         tag="点击数据点钻取"
@@ -314,3 +312,41 @@ function printReport() {
   win.print()
 }
 </script>
+
+<style scoped>
+.charts-layout {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+}
+
+/* 柱状图商品分类较多，占满全宽以防挤压 */
+.charts-layout > :first-child {
+  grid-column: 1 / -1;
+}
+
+/* 趋势图为单数时，让最后一个也占满全宽，保持对称美观 */
+.charts-layout > :last-child:nth-child(even) {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 1024px) {
+  .charts-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .charts-layout > :first-child,
+  .charts-layout > :last-child:nth-child(even) {
+    grid-column: auto;
+  }
+}
+
+:deep(.section-panel) {
+  margin-bottom: 0;
+  transition: all 0.3s ease;
+}
+
+:deep(.section-panel:hover) {
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
+  transform: translateY(-2px);
+}
+</style>
